@@ -1,0 +1,53 @@
+---
+name: Main - Continuous Integration
+
+on: # yamllint disable-line rule:truthy
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  clean:
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/prune-pull-requests-images-tags.yml@c9088e8447c5a8be45157e17701023fc50ccb1c0 # 0.37.2
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: read
+    with:
+      images: '["backend-ci","frontend-ci","live-data-generator-ci","backend","frontend","live-data-generator"]'
+
+  ci:
+    name: Continuous Integration
+    uses: ./.github/workflows/__shared-ci.yml
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+      id-token: write
+      issues: write
+      packages: write
+      pull-requests: write
+      security-events: write
+      statuses: write
+
+  helm-docs:
+    needs: ci
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: hoverkraft-tech/ci-github-container/actions/helm/generate-docs@c9088e8447c5a8be45157e17701023fc50ccb1c0 # 0.37.2
+        with:
+          working-directory: ./charts
+          github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+          github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env]

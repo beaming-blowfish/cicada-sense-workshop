@@ -1,0 +1,65 @@
+---
+name: • 🚀 Release
+
+on: # yamllint disable-line rule:truthy
+  workflow_dispatch:
+    inputs:
+      # checkov:skip=CKV_GHA_7: required
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - uat
+          - production
+
+permissions: {}
+
+jobs:
+  # TODO: re-enable CI job when we have a proper CI workflow
+  # ci:
+  #   name: Continuous Integration
+  #   uses: ./.github/workflows/__shared-ci.yml
+  #   permissions:
+  #     actions: read
+  #     checks: write
+  #     contents: read
+  #     id-token: write
+  #     issues: write
+  #     packages: write
+  #     pull-requests: write
+  #     security-events: write
+  #     statuses: write
+
+  release:
+    # needs: [ci]
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    outputs:
+      tag: ${{ steps.create-release.outputs.tag }}
+    steps:
+      - id: create-release
+        uses: hoverkraft-tech/ci-github-publish/actions/release/create@b2562b46714e535a0113f90f554b55e1248212c1 # 0.26.3
+        with:
+          prerelease: ${{ inputs.environment == 'uat' }}
+
+  deploy:
+    name: Deploy
+    needs: [release]
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      actions: read
+      contents: write
+      deployments: write
+      id-token: write
+      issues: write
+      packages: write
+      pull-requests: write
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+      environment: ${{ inputs.environment }}
+    secrets:
+      CI_BOT_APP_PRIVATE_KEY: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
