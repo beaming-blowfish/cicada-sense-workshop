@@ -35,6 +35,13 @@ Read:
 
 Create `.github/workflows/prepare-release.yml`.
 
+Open a terminal in the application repository root and create the workflow file first:
+
+```bash
+mkdir -p .github/workflows
+touch .github/workflows/prepare-release.yml
+```
+
 Its job is intentionally small:
 
 1. run on pull requests and pushes to `main`
@@ -54,6 +61,12 @@ Read:
 ## Step 3. Add the deploy contract
 
 Create `.github/workflows/deploy.yml`.
+
+From the same terminal, create the deploy workflow file:
+
+```bash
+touch .github/workflows/deploy.yml
+```
 
 This is the core CD workflow. It should:
 
@@ -128,6 +141,12 @@ Read:
 
 Create `.github/workflows/release.yml`.
 
+From the same terminal, create the release workflow file:
+
+```bash
+touch .github/workflows/release.yml
+```
+
 Rules:
 
 1. expose a manual `workflow_dispatch`
@@ -173,6 +192,14 @@ For the GitOps repository content, verify this environment split:
 3. both environments point to the release tag created by `release.yml`
 4. both environments keep the same backend, frontend, and live-data-generator artifact references for that promoted tag
 
+When this step is done, open a terminal in the application repository root and commit then push your CD workflow changes:
+
+```bash
+git add .github/workflows
+git commit -m "feat: add CD workflows"
+git push
+```
+
 Read:
 
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
@@ -202,7 +229,8 @@ Before you call this step done, confirm these points:
 4. UAT and production reuse the same artifact model
 5. deployment updates GitOps state instead of rebuilding images
 6. the three CD workflow files in your repository are `prepare-release.yml`, `deploy.yml`, and `release.yml`
-7. your result is close to [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository)
+7. your latest CD changes are committed and pushed
+8. your result is close to [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository)
 
 ## If you get stuck
 

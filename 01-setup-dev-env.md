@@ -28,6 +28,7 @@ The organizers will share the password needed to log in once everyone is ready t
 In the meantime, you can look around your organization and discover the content already available.
 
 Once you log in, open `/home/coder/work` first. That is the directory where you should create or clone all workshop repositories.
+Your first action in the dev environment should be to clone this workshop repository there as `_cicada-sense-workshop`.
 
 ## What you should know
 
@@ -47,6 +48,7 @@ Open a terminal in the dev environment and run the following commands from `/hom
 mise install # just to be sure
 mise run ssh:setup # no passkey needed
 mise run gnupg:setup # no passkey needed
+git clone https://github.com/hoverkraft-tech/cicada-sense-workshop.git _cicada-sense-workshop
 ```
 
 ⚠️⚠️⚠️ **IMPORTANT** ⚠️⚠️⚠️ The SSH command will ask you at the end to add the generated SSH key to your account.
@@ -62,5 +64,6 @@ Before moving to the next step, confirm these points:
 2. you are logged in to the dev environment
 3. `mise run ssh:setup` completed and the SSH key was added to GitHub
 4. `mise run gnupg:setup` completed successfully
+5. `_cicada-sense-workshop` exists under `/home/coder/work`
 
 It is time to start your new dedicated platform!

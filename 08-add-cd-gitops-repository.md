@@ -31,7 +31,13 @@ What to do:
 1. create your own repository from the template
 2. keep the repository in the same GitHub owner or organization if you want to reuse the default deploy contract
 3. name it `argocd-app-of-apps` or be ready to update the `deploy-parameters` in later CD workflows
-4. clone the new repository locally
+4. open a terminal in `/home/coder/work` and clone the new repository locally:
+
+```bash
+git clone git@github.com:<your-org>/argocd-app-of-apps.git
+cd argocd-app-of-apps
+```
+
 5. run the template initialization command immediately after creating the repository, from the repository root
 
 Do not start editing application deployment files by hand before running the template bootstrap command. The template is responsible for generating the starting structure.
@@ -50,7 +56,13 @@ Useful options:
 2. `DRY_RUN=1` to preview the files that would be updated before writing them
 
 This initialization step replaces the repository placeholders and removes the bootstrap script so the repository starts from a clean, usable GitOps state.
-Commit that initialized state before moving to the next command.
+Commit that initialized state before moving to the next command:
+
+```bash
+git add .
+git commit -m "chore: initialize GitOps repository"
+git push
+```
 
 At this point, you should have one clean commit that represents "template initialized for my org and domains".
 
@@ -81,7 +93,13 @@ This command creates the default review, UAT, and production directories for the
 6. `prod/manifests/production/cicada-sense/`
 
 After scaffolding, adjust the generated files with the real chart reference, ingress hosts, namespaces, and any environment-specific values needed for this workshop.
-Commit this scaffolded application state before returning to the application repository.
+Commit this scaffolded application state before returning to the application repository:
+
+```bash
+git add .
+git commit -m "feat: scaffold cicada-sense application"
+git push
+```
 
 Do not try to wire deployment automation yet. In this step, your goal is only to prepare the repository structure that the deployment workflow will update later.
 
@@ -160,7 +178,7 @@ Before you move on, confirm these points:
 2. you ran the template bootstrap command successfully
 3. you scaffolded the `cicada-sense` application in that repository
 4. the repository now contains review, UAT, and production application directories for `cicada-sense`
-5. you committed the initialized repository state and the scaffolded application state
+5. you committed and pushed the initialized repository state and the scaffolded application state
 6. you know which `apps/` and `manifests/` files will be updated by the deployment workflow in the next step
 
 ## If you get stuck

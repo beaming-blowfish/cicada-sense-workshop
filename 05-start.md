@@ -25,15 +25,29 @@ At the end of this step, you should have your own GitHub repository based on [st
 ## Step 1. Create the learner repository
 
 1. Create a new GitHub repository with these settings: name `cicada-sense`, visibility `Public`, and no initial content.
-2. Clone that empty repository locally, for example with `git clone git@github.com:<your-org>/cicada-sense.git`.
-3. Open the cloned `cicada-sense` directory and copy the baseline into its root with `rsync -va ../cicada-sense-workshop/steps/05-start/ ./`.
-4. Do not nest the files under an extra `steps/05-start/` directory.
-5. Keep the repository structure as-is. At the root, you should still have `compose.yaml`, `Makefile`, `application/`, `charts/`, and `docker/`.
-6. Commit the baseline and push it to GitHub on a `main` branch.
+2. Open a terminal in `/home/coder/work` and clone that empty repository locally:
 
-If you copied the files locally before cloning the GitHub repository, add the remote manually with `git remote add origin git@github.com:<your-org>/cicada-sense.git`, then push to `main`.
+```bash
+git clone git@github.com:<your-org>/cicada-sense.git
+cd cicada-sense
+```
 
-At the end of this step, opening your repository root should show the same baseline layout as [steps/05-start](steps/05-start), not an extra nested folder.
+3. From that same terminal, copy the baseline into the repository root:
+
+```bash
+rsync -va ../_cicada-sense-workshop/steps/05-start/ ./
+```
+
+4. Keep the repository structure as-is. At the root, you should still have `compose.yaml`, `Makefile`, `application/`, `charts/`, and `docker/`.
+5. From the same terminal, commit the baseline and push it to GitHub:
+
+```bash
+git add .
+git commit -m "chore: initialize repository from workshop baseline"
+git push -u origin main
+```
+
+At the end of this step, opening your repository root should show the same baseline layout as [steps/05-start](steps/05-start).
 
 Read:
 
@@ -45,8 +59,18 @@ Read:
 Run the baseline exactly as provided.
 In this step, `make ci` is only a local validation command. It does not mean GitHub CI already exists.
 
-1. From the repository root, run `make setup`.
-2. From the same directory, run `make ci`.
+1. Open a terminal in the `cicada-sense` repository root and run:
+
+```bash
+make setup
+```
+
+2. From that same terminal, run:
+
+```bash
+make ci
+```
+
 3. Treat success as both commands completing without requiring application-code or Helm-chart changes.
 4. Confirm the baseline still behaves like a production-grade starting point: Dockerized services, local development flow, and Helm chart in place.
 
@@ -113,6 +137,7 @@ Before moving to the next step, confirm these points:
 2. `make setup` works locally
 3. `make ci` works locally
 4. there is no `.github/workflows/` GitHub Actions CI/CD implementation yet, or at least none of the workshop workflow files exist
+5. your latest changes are committed and pushed to `main`
 
 ## If you get stuck
 

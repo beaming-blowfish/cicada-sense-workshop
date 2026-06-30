@@ -136,6 +136,14 @@ You can retrieve the argocd credentials using the following command: `mise run a
 
 Once you open Argo CD, you should see an application in an `Unknown` state. This is expected at this stage: the platform is running, but the source-of-truth GitOps repository has not been created yet, so Argo CD cannot resolve that application fully.
 
+When this step is done, open a terminal in the `infrastructure` repository root and commit then push your changes:
+
+```bash
+git add .
+git commit -m "feat: configure tools environment"
+git push
+```
+
 At the end of this step, you should have a reachable `tools` cluster, a working `tools` kubeconfig context, and access to the Argo CD URL.
 
 

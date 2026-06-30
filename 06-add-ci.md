@@ -30,6 +30,13 @@ You are not trying to invent a pipeline. You are implementing an existing contra
 Create `.github/workflows/__shared-ci.yml` first.
 Make this the only file that contains the real CI job sequence.
 
+Open a terminal in the application repository root and create the workflow file first:
+
+```bash
+mkdir -p .github/workflows
+touch .github/workflows/__shared-ci.yml
+```
+
 Think of this file as the source of truth for CI behavior. If you later find yourself copying jobs into `pull-request-ci.yml` or `main-ci.yml`, stop and move that logic back here.
 
 Your shared workflow should do this, in this order:
@@ -60,6 +67,12 @@ Read:
 
 Create `.github/workflows/pull-request-ci.yml`.
 
+From the same terminal, create the pull request workflow file:
+
+```bash
+touch .github/workflows/pull-request-ci.yml
+```
+
 Rules:
 
 1. trigger on pull requests targeting `main`
@@ -79,6 +92,12 @@ Read:
 ## Step 4. Add the mainline entrypoint
 
 Create `.github/workflows/main-ci.yml`.
+
+From the same terminal, create the mainline workflow file:
+
+```bash
+touch .github/workflows/main-ci.yml
+```
 
 Rules:
 
@@ -126,6 +145,14 @@ Expected core file set in your repository after this step:
 
 If the graph order is wrong, fix the job dependencies in `__shared-ci.yml`. Do not work around the problem by moving logic into the wrapper workflows.
 
+When this step is done, open a terminal in the application repository root and commit then push your workflow changes:
+
+```bash
+git add .github/workflows
+git commit -m "feat: add CI workflows"
+git push
+```
+
 Read:
 
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
@@ -159,7 +186,8 @@ Before moving to the next step, confirm these points:
 3. CI runs inside dedicated `ci` images
 4. chart validation uses the built runtime images
 5. the core workflow files in your repository are `__shared-ci.yml`, `pull-request-ci.yml`, and `main-ci.yml`
-6. your result is close to [steps/06-add-ci](steps/06-add-ci)
+6. your latest CI changes are committed and pushed
+7. your result is close to [steps/06-add-ci](steps/06-add-ci)
 
 ## If you get stuck
 
