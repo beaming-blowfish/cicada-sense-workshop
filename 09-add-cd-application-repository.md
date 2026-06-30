@@ -6,9 +6,15 @@ Goal: starting from the CI state and a ready GitOps repository, implement releas
 
 At the end of this step, your repository should be able to deploy a review app from a pull request, then prepare a release, create a promotion tag, and deploy the same tagged artifacts to UAT and production through your own GitOps delivery repository.
 
+Start this step only after the CI workflows from [steps/06-add-ci](steps/06-add-ci) are green and your separate `argocd-app-of-apps` repository is ready.
+In this step, you work in the application repository, not in `argocd-app-of-apps`.
+
 ## Step 1. Prepare the GitHub repository settings
 
 Before writing CD workflows, configure the repository settings they depend on.
+Set these in the application repository that will run the workflows.
+
+Set these first. Otherwise, your first workflow runs may fail for missing configuration instead of revealing real CD issues.
 
 Required variables and secrets for this workshop:
 
@@ -36,6 +42,9 @@ Its job is intentionally small:
 3. do not deploy anything
 
 This workflow exists to keep release intent ready before promotion time.
+It should not write to the GitOps repository.
+
+If this file starts looking like a deploy workflow, it has grown beyond its job.
 
 Read:
 
@@ -55,6 +64,14 @@ This is the core CD workflow. It should:
 5. reuse already-built runtime images
 6. update GitOps state instead of rebuilding during deploy
 7. map the three runtime images into the umbrella chart values
+
+Be strict about responsibility boundaries:
+
+1. `deploy.yml` is the workflow that writes deployment state to the GitOps repository
+2. it should deploy artifacts that CI has already built
+3. it should not duplicate release creation logic
+
+Build this workflow around the review app path first. That is the cheapest environment to validate because it proves the contract before you involve release tags or production environments.
 
 Match the contract field by field. Do not improvise the inputs, image mapping, or deployment model.
 
@@ -84,7 +101,10 @@ Expected behavior:
 4. the deployment reuses the already-built images
 5. the desired state is written to your GitOps repository
 
+If the workflow rebuilds images, or if you only see changes in the application repository, stop there. That means the deploy contract is still wrong.
+
 Inspect the GitOps repository diff after that first review deployment.
+Inspect the GitOps repository diff, not the application repository diff.
 
 You should see changes only in the review app slice:
 
@@ -116,6 +136,10 @@ Rules:
 4. call `deploy.yml` with that tag
 5. promote the same artifact to every environment
 
+Keep this workflow thin. Its job is promotion orchestration, not deployment logic duplication.
+
+If `release.yml` starts to look like a second `deploy.yml`, you are probably duplicating logic that should stay reusable in the deploy workflow.
+
 For this workshop target, UAT is a prerelease and production is not.
 
 Important detail: the published Hoverkraft CD guide is the source of truth. If you compare your result with [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository), you will notice that the CI prerequisite in `release.yml` is still commented out in the snapshot. Treat that as temporary drift in the example step, not as the contract to copy.
@@ -137,6 +161,10 @@ Test promotion in this order:
 5. confirm that deployment uses the existing tagged images
 6. run the same workflow for `production`
 7. confirm that production reuses the same promotion model instead of rebuilding
+
+The key success signal is artifact reuse: UAT and production should consume the same promoted images for the same release tag.
+
+Treat UAT as your proof step. Only move to production once the UAT run and the GitOps diff both look correct.
 
 For the GitOps repository content, verify this environment split:
 
@@ -173,7 +201,8 @@ Before you call this step done, confirm these points:
 3. `release.yml` creates the tag and then calls `deploy.yml`
 4. UAT and production reuse the same artifact model
 5. deployment updates GitOps state instead of rebuilding images
-6. your result is close to [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository)
+6. the three CD workflow files in your repository are `prepare-release.yml`, `deploy.yml`, and `release.yml`
+7. your result is close to [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository)
 
 ## If you get stuck
 

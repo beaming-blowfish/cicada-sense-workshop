@@ -1,23 +1,12 @@
 # Step 01 - Start From The Baseline
 
-Goal: create the learner repository from the production-grade starting point and prove it works before adding automation.
+Goal: create the learner repository from the production-grade starting point and prove it works locally before adding GitHub automation.
 
 ## Before you begin
 
-The step folders in this repository are snapshots, not the exercise. Work in your own GitHub repository and use this repository as a guide and checkpoint.
-
-How to use the workshop:
-
-1. create a dedicated GitHub repository from `steps/05-start`
-2. do the work in that repository, not in this workshop repository
-3. read the Hoverkraft docs linked in each step before writing YAML
-4. use `steps/06-add-ci`, `steps/09-add-cd-application-repository`, and `steps/argocd-app-of-apps` only as checkpoints after you have tried the step yourself
-
-Important rule:
-
-1. the application code, Dockerfiles, and Helm charts are already in place in `05-start`
-2. the workshop delta is mostly under `.github/workflows/`
-3. if you think you need to change application code to make CI or CD work, stop and re-check the workflow contract first
+The step folders in this repository are snapshots, not the exercise.
+Do the work in your own application repository and use this repository only as a guide or checkpoint.
+In this step, do not create `.github/workflows/` files yet.
 
 Reference docs:
 
@@ -31,13 +20,20 @@ Reference docs:
 
 ## Outcome
 
-At the end of this step, you should have your own GitHub repository based on [steps/05-start](steps/05-start), running locally, with no CI/CD workflow yet.
+At the end of this step, you should have your own GitHub repository based on [steps/05-start](steps/05-start), running locally, with no GitHub Actions CI/CD workflow yet.
 
 ## Step 1. Create the learner repository
 
-1. Copy the content of [steps/05-start](steps/05-start) into a dedicated GitHub repository.
-2. Keep the repository structure as-is.
-3. Push it to GitHub on a `main` branch.
+1. Create a new GitHub repository with these settings: name `cicada-sense`, visibility `Public`, and no initial content.
+2. Clone that empty repository locally, for example with `git clone git@github.com:<your-org>/cicada-sense.git`.
+3. Open the cloned `cicada-sense` directory and copy the baseline into its root with `rsync -va ../cicada-sense-workshop/steps/05-start/ ./`.
+4. Do not nest the files under an extra `steps/05-start/` directory.
+5. Keep the repository structure as-is. At the root, you should still have `compose.yaml`, `Makefile`, `application/`, `charts/`, and `docker/`.
+6. Commit the baseline and push it to GitHub on a `main` branch.
+
+If you copied the files locally before cloning the GitHub repository, add the remote manually with `git remote add origin git@github.com:<your-org>/cicada-sense.git`, then push to `main`.
+
+At the end of this step, opening your repository root should show the same baseline layout as [steps/05-start](steps/05-start), not an extra nested folder.
 
 Read:
 
@@ -47,12 +43,21 @@ Read:
 ## Step 2. Validate the local baseline
 
 Run the baseline exactly as provided.
+In this step, `make ci` is only a local validation command. It does not mean GitHub CI already exists.
 
-1. Run `make setup`.
-2. Run `make ci`.
-3. Confirm the application still behaves like a production-grade baseline: Dockerized services, local development flow, and Helm chart in place.
+1. From the repository root, run `make setup`.
+2. From the same directory, run `make ci`.
+3. Treat success as both commands completing without requiring application-code or Helm-chart changes.
+4. Confirm the baseline still behaves like a production-grade starting point: Dockerized services, local development flow, and Helm chart in place.
 
-If the local baseline is not green, do not start writing workflows yet.
+Use this troubleshooting order:
+
+1. if `make setup` fails, fix that first and rerun it
+2. only run `make ci` after `make setup` succeeds
+3. if `make ci` fails, do not create GitHub workflow files to compensate; fix the local baseline first
+
+If the local baseline is not green, do not start writing GitHub workflows yet.
+Fix the local setup problem first, then rerun the same commands.
 
 Read:
 
@@ -71,10 +76,12 @@ What is already done in `05-start`:
 
 What is intentionally missing:
 
-1. pull request CI
-2. mainline CI
+1. pull request GitHub Actions CI
+2. mainline GitHub Actions CI
 3. release preparation
 4. deployment workflows
+
+That means your job in `05-start` is only to prove the baseline works as delivered. You are not designing automation yet.
 
 Read:
 
@@ -82,13 +89,14 @@ Read:
 
 ## Step 4. Confirm the repository shape
 
-This workshop uses the multi-application CI/CD shape.
+This workshop targets a multi-application CI/CD shape.
+In `05-start`, you are only validating the repository baseline that later CI/CD workflows will use.
 
 You have:
 
 1. one Dockerfile per service
-2. one `ci` image per service
-3. one runtime image per service
+2. a separate CI build setup for `backend`, `frontend`, and `live-data-generator`
+3. a separate deployable build for each service
 4. one umbrella chart that releases the services together
 
 This matters because you should follow the multi-app guide, not the single-app one.
@@ -104,7 +112,7 @@ Before moving to the next step, confirm these points:
 1. your repository is based on [steps/05-start](steps/05-start)
 2. `make setup` works locally
 3. `make ci` works locally
-4. there is no `.github/workflows/` CI/CD implementation yet
+4. there is no `.github/workflows/` GitHub Actions CI/CD implementation yet, or at least none of the workshop workflow files exist
 
 ## If you get stuck
 
