@@ -366,6 +366,12 @@ git pull
 git diff HEAD~1..HEAD
 ```
 
+If a workflow behaves unexpectedly because of stale GitHub Actions caches, this cleanup command can help from a terminal authenticated with `gh`:
+
+```bash
+gh cache delete --all --succeed-on-no-caches --repo <owner>/cicada-sense
+```
+
 When this step is done, open a terminal in the application repository root and commit then push your CD workflow changes:
 
 ```bash
