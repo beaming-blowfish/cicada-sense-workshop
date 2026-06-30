@@ -13,8 +13,8 @@ Root commands use Docker Compose. Node.js package managers are scoped to applica
 
 ## Local URLs
 
-- Dashboard: `http://cicada-sense.localhost`
-- Live data generator: `http://generator.cicada-sense.localhost`
+ - Dashboard: `http://cicada-sense-app.localhost`
+ - Live data generator: `http://cicada-sense-generator.localhost`
 - Traefik: `http://traefik.localhost:8080`
 
 ## Applications

@@ -14,7 +14,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5174",
   "http://localhost:4174",
   "http://localhost:5174",
-  "http://generator.cicada-sense.localhost",
+  "http://cicada-sense-generator.localhost",
 ];
 
 export class GeneratorSecurity {

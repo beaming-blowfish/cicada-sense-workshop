@@ -26,8 +26,8 @@ install: ## Build local app images and install app dependencies inside them
 
 setup: up ## Build and start the local stack
 	@echo "$(GREEN)Application available at:$(NC)"
-	@echo "  Dashboard: $(YELLOW)http://app.cicada-sense.<your base domain>$(NC)"
-	@echo "  Generator: $(YELLOW)http://generator.cicada-sense.<your base domain>$(NC)"
+	@echo "  Dashboard: $(YELLOW)http://cicada-sense-app.<your base domain>$(NC)"
+	@echo "  Generator: $(YELLOW)http://cicada-sense-generator.<your base domain>$(NC)"
 
 build: ## Build local Docker images, optionally with SERVICE=<name>
 	@$(COMPOSE) build $(SERVICE)

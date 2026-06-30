@@ -9,7 +9,7 @@ export default defineConfig({
     target: "esnext",
   },
   server: {
-    allowedHosts: ["frontend", "cicada-sense.localhost"],
+    allowedHosts: ["frontend", "cicada-sense-app.localhost"],
     host: "0.0.0.0",
     port: 5173,
     proxy: {
