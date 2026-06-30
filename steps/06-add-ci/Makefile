@@ -86,16 +86,18 @@ test: ## Run unit and integration tests inside containers
 	@$(COMPOSE) up -d --wait postgres redis
 	$(call npm-app, run test:ci)
 
-helm: ## Run Helm chart checks
+helm-docs: ## Generate Helm chart documentation
+	@if command -v helm-docs >/dev/null 2>&1; then helm-docs --chart-search-root ./charts; else echo "helm-docs is not installed; skipping chart docs generation"; fi
+
+helm-tests: ## Run Helm chart checks
 	@mkdir -p ./charts/dist
 	@helm dependency build ./charts/application
 	@helm package ./charts/application --destination ./charts/dist
-	@if command -v helm-docs >/dev/null 2>&1; then helm-docs --chart-search-root ./charts; else echo "helm-docs is not installed; skipping chart docs generation"; fi
 	@ct lint
 	@helm dependency build ./charts/application
 	@helm template cicada-sense ./charts/application --namespace cicada-sense >/dev/null
 
-ci: build lint-fix typecheck test helm ## Run the full containerized validation suite
+ci: build helm-docs lint-fix typecheck test helm-tests ## Run the full containerized validation suite
 
 clean: ## Remove generated containers, volumes, and ignored local artifacts
 	@$(COMPOSE) down --volumes --remove-orphans
