@@ -1,4 +1,4 @@
-# Step 03 - Add argocd-app-of-apps (GitOps repository)
+# Step 08 - Add argocd-app-of-apps (GitOps repository)
 
 Goal: prepare the GitOps delivery repository that will receive the deployment state for `cicada-sense`.
 
@@ -7,20 +7,19 @@ Reference snapshot: [steps/argocd-app-of-apps](steps/argocd-app-of-apps)
 ## Outcome
 
 At the end of this step, you should have an initialized `argocd-app-of-apps` repository with a scaffolded `cicada-sense` application layout for review apps, UAT, and production.
-This is a separate repository from the application repository. Do not create this layout inside your `cicada-sense` application repo.
-
-At this point in the workshop, you should think in terms of two repositories:
-
-1. the application repository, where CI and CD workflows live
-2. the `argocd-app-of-apps` repository, where deployment state will be written
-
-All commands in this step run in the GitOps repository, not in the application repository.
+This is a separate repository from the application repository.
 
 If you want a full repository checkpoint instead of comparing file by file against the template README, use [steps/argocd-app-of-apps](steps/argocd-app-of-apps).
 
 ## Step 1. Create the GitOps delivery repository
 
 Before implementing CD in the application repository, create the repository that will receive the deployment state.
+
+In this step, keep these repository boundaries in mind:
+
+1. the application repository is where CI and CD workflows live
+2. `argocd-app-of-apps` is where deployment state will be written
+3. all commands in this step run in the GitOps repository, not in the application repository
 
 Start from this template:
 
@@ -117,12 +116,17 @@ Check these points:
 4. the generated files are ready to receive the real chart and image references from the CD workflow
 5. the repository history now contains at least one commit for initialization and one for the `cicada-sense` scaffold
 
+This quick check can help before you move on:
+
+```bash
+git log --oneline -n 2
+```
+
 If you cannot clearly point to those two commits, you likely skipped a checkpoint and should clean that up before moving on.
 
 Read:
 
-- <https://github.com/hoverkraft-tech/argocd-app-of-apps-template#initialize-a-repository-created-from-this-template>
-- <https://github.com/hoverkraft-tech/argocd-app-of-apps-template#adding-a-new-application>
+- <https://github.com/hoverkraft-tech/argocd-app-of-apps-template>
 
 Dedicated snapshot:
 

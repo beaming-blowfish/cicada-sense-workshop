@@ -1,29 +1,26 @@
-# Step 02 - Add CI
+# Step 06 - Add CI
 
 Goal: starting from [steps/05-start](steps/05-start), implement GitHub Actions CI until you are close to [steps/06-add-ci](steps/06-add-ci).
 
 ## Outcome
 
 At the end of this step, your repository should validate pull requests and `main` with the Hoverkraft CI contract for a multi-application repository.
-The core result is three workflow files with clear responsibilities: one reusable workflow and two thin entrypoints.
-
-Recommended implementation order:
-
-1. create `__shared-ci.yml` and get the job order right first
-2. create `pull-request-ci.yml` as a thin wrapper around it
-3. create `main-ci.yml` as the second thin wrapper
-4. open a pull request and inspect the workflow graph before comparing with the snapshot
+The core result is three workflow files: one reusable workflow and two thin entrypoints.
 
 ## Step 1. Read the contract before writing YAML
 
 Read these pages first:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 You are not trying to invent a pipeline. You are implementing an existing contract.
+
+Read those pages first. Then, later in this step, this order usually works best:
+
+1. `__shared-ci.yml` first, with the job order defined clearly
+2. `pull-request-ci.yml` next, as a thin wrapper around the shared workflow
+3. `main-ci.yml` after that, as the second thin wrapper
+4. a pull request last, to inspect the workflow graph before comparing with the snapshot
 
 ## Step 2. Create the shared CI workflow
 
@@ -39,28 +36,193 @@ touch .github/workflows/__shared-ci.yml
 
 Think of this file as the source of truth for CI behavior. If you later find yourself copying jobs into `pull-request-ci.yml` or `main-ci.yml`, stop and move that logic back here.
 
-Your shared workflow should do this, in this order:
+In this workshop target, `__shared-ci.yml` is easiest to understand as four jobs, in this order:
 
-1. run repository-wide linting
-2. build `backend-ci`, `frontend-ci`, and `live-data-generator-ci`
-3. run CI in a matrix for the three applications
-4. build runtime images only after CI passes
-5. validate the Helm chart with the built runtime images
+1. `build-ci`: prepares the CI container images used by later checks
+2. `continuous-integration`: runs the application checks in a matrix for `backend`, `frontend`, and `live-data-generator`
+3. `build`: builds the deployable runtime images only after all CI checks pass
+4. `tests-charts`: validates the Helm chart with the runtime images produced earlier
 
-Be precise here:
+What each job needs to configure:
 
-1. declare the workflow with `workflow_call` so other workflows can reuse it instead of duplicating CI logic
-2. model the order with explicit job dependencies so the graph clearly shows: lint first, then CI build setup, then application checks, then runtime builds, then chart validation
-3. define the check matrix with exactly three application names: `backend`, `frontend`, and `live-data-generator`; if one is missing, the contract is incomplete
-4. keep the chart validation step as a consumer of artifacts produced earlier in the workflow; it must reuse the already-built runtime artifacts and must not trigger a second build
+A minimal workflow header first:
 
-Before filling in every command, it often helps to sketch the shared workflow as job blocks and `needs` relationships first. Once the graph shape is correct, add the detailed steps inside each job.
+```yaml
+name: Shared - Continuous Integration for common tasks
+
+on:
+  workflow_call:
+
+permissions: {}
+```
+
+Then add the jobs one by one.
+
+`build-ci`:
+
+```yaml
+jobs:
+  build-ci:
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@<ref>
+    permissions:
+      contents: read
+      packages: write
+      issues: read
+      pull-requests: read
+      id-token: write
+    with:
+      oci-registry: ${{ vars.OCI_REGISTRY }}
+      sign: false
+      images: |
+        [
+          {
+            "name": "backend-ci",
+            "context": ".",
+            "dockerfile": "./docker/backend/Dockerfile",
+            "target": "ci",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "frontend-ci",
+            "context": ".",
+            "dockerfile": "./docker/frontend/Dockerfile",
+            "target": "ci",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "live-data-generator-ci",
+            "context": ".",
+            "dockerfile": "./docker/live-data-generator/Dockerfile",
+            "target": "ci",
+            "platforms": ["linux/amd64"]
+          }
+        ]
+    secrets:
+      oci-registry-password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+`continuous-integration`:
+
+```yaml
+  continuous-integration:
+    name: Continuous Integration - ${{ matrix.application }}
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@<ref>
+    needs: build-ci
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+      security-events: write
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - application: backend
+            image: backend-ci
+            path: ./application/monitoring-workspace/backend
+          - application: frontend
+            image: frontend-ci
+            path: ./application/monitoring-workspace/frontend
+          - application: live-data-generator
+            image: live-data-generator-ci
+            path: ./application/live-data-generator
+    with:
+      working-directory: /usr/src/app
+      container: |
+        {
+          "image": ${{ toJSON(fromJSON(needs.build-ci.outputs.built-images)[matrix.image].images[0]) }},
+          "credentials": {
+            "username": ${{ toJson(github.repository_owner) }}
+          },
+          "pathMapping": {
+            "/usr/src/app": "${{ matrix.path }}"
+          }
+        }
+    secrets:
+      container-password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+`build`:
+
+```yaml
+  build:
+    needs: continuous-integration
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@<ref>
+    permissions:
+      contents: read
+      packages: write
+      issues: read
+      pull-requests: read
+      id-token: write
+    with:
+      oci-registry: ${{ vars.OCI_REGISTRY }}
+      sign: false
+      images: |
+        [
+          {
+            "name": "backend",
+            "context": ".",
+            "dockerfile": "./docker/backend/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "frontend",
+            "context": ".",
+            "dockerfile": "./docker/frontend/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "live-data-generator",
+            "context": ".",
+            "dockerfile": "./docker/live-data-generator/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          }
+        ]
+    secrets:
+      oci-registry-password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+`tests-charts`:
+
+```yaml
+  tests-charts:
+    name: Tests - Charts
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Test helm charts
+        uses: hoverkraft-tech/ci-github-container/actions/helm/test-chart@<ref>
+        with:
+          helm-set: |
+            backend.image=${{ fromJSON(needs.build.outputs.built-images).backend.images[0] }}
+            frontend.image=${{ fromJSON(needs.build.outputs.built-images).frontend.images[0] }}
+            live-data-generator.api.image=${{ fromJSON(needs.build.outputs.built-images)['live-data-generator'].images[0] }}
+            live-data-generator.ui.image=${{ fromJSON(needs.build.outputs.built-images)['live-data-generator'].images[0] }}
+            global.imagePullSecrets[0].name=regcred
+          oci-registry: ${{ vars.OCI_REGISTRY }}
+          oci-registry-password: ${{ github.token }}
+```
+
+What to pay attention to in those snippets:
+
+1. `build-ci` prepares only the three `*-ci` images.
+2. `continuous-integration` depends on `build-ci` and maps each application path to its matching CI image.
+3. `build` depends on `continuous-integration` and prepares only the three runtime images.
+4. `tests-charts` depends on `build` and reuses those built images through `helm-set`.
+
+If you want the exact pinned workflow and action versions, copy them from [steps/06-add-ci/.github/workflows/__shared-ci.yml](steps/06-add-ci/.github/workflows/__shared-ci.yml).
 
 The important part is the contract and the sequence, not decorative YAML.
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 
 ## Step 3. Add the pull request entrypoint
@@ -86,7 +248,6 @@ If this file starts growing many build or test jobs, it is no longer thin enough
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
 - <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Step 4. Add the mainline entrypoint
@@ -112,8 +273,6 @@ This file should read like an entrypoint plus a small amount of `main`-specific 
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 - <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Step 5. Validate CI behavior
@@ -125,11 +284,11 @@ When you inspect the graph, check both the order of the stages and the dependenc
 Expected pull request behavior:
 
 1. `pull-request-ci.yml` acts only as a thin entrypoint and delegates the real work to `__shared-ci.yml`
-2. the first real job is repository-wide linting
-3. after lint passes, the workflow builds the three CI environments used for checks: `backend-ci`, `frontend-ci`, and `live-data-generator-ci`
-4. after those builds finish, the workflow runs a matrix with exactly three entries: `backend`, `frontend`, and `live-data-generator`
-5. only after every matrix check passes does the workflow build the deployable runtime artifacts
-6. the final stage validates the Helm chart with those already-built runtime artifacts, so chart validation appears last in the graph
+2. `build-ci` runs first and prepares the CI images used by the checks
+3. `continuous-integration` runs next as a matrix with exactly three entries: `backend`, `frontend`, and `live-data-generator`
+4. the lint, typecheck, and test checks happen inside that CI matrix, inside the matching CI image for each application
+5. `build` runs only after every matrix check passes and prepares the deployable runtime images
+6. `tests-charts` runs last and validates the Helm chart with those already-built runtime images
 
 Expected `main` behavior after merge:
 
@@ -155,7 +314,6 @@ git push
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
 - <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Step 6. Reach parity with the snapshot

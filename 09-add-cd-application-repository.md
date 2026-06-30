@@ -1,4 +1,4 @@
-# Step 04 - Add CD (application repository)
+# Step 09 - Add CD (application repository)
 
 Goal: starting from the CI state and a ready GitOps repository, implement release and deployment workflows until you are close to [steps/09-add-cd-application-repository](steps/09-add-cd-application-repository).
 
@@ -6,15 +6,22 @@ Goal: starting from the CI state and a ready GitOps repository, implement releas
 
 At the end of this step, your repository should be able to deploy a review app from a pull request, then prepare a release, create a promotion tag, and deploy the same tagged artifacts to UAT and production through your own GitOps delivery repository.
 
+## Step 1. Prepare the GitHub repository settings
+
 Start this step only after the CI workflows from [steps/06-add-ci](steps/06-add-ci) are green and your separate `argocd-app-of-apps` repository is ready.
 In this step, you work in the application repository, not in `argocd-app-of-apps`.
-
-## Step 1. Prepare the GitHub repository settings
 
 Before writing CD workflows, configure the repository settings they depend on.
 Set these in the application repository that will run the workflows.
 
 Set these first. Otherwise, your first workflow runs may fail for missing configuration instead of revealing real CD issues.
+
+In GitHub, the shortest path is usually:
+
+1. open the application repository
+2. open `Settings`
+3. open `Secrets and variables`
+4. open `Actions`
 
 Required variables and secrets for this workshop:
 
@@ -25,11 +32,23 @@ Required variables and secrets for this workshop:
 5. variable `UAT_URL`
 6. variable `PRODUCTION_URL`
 
+Copy list:
+
+```text
+Variables:
+OCI_REGISTRY
+CI_BOT_APP_CLIENT_ID
+REVIEW_APPS_URL
+UAT_URL
+PRODUCTION_URL
+
+Secrets:
+CI_BOT_APP_PRIVATE_KEY
+```
+
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/>
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Step 2. Add release preparation
 
@@ -48,6 +67,31 @@ Its job is intentionally small:
 2. prepare release metadata
 3. do not deploy anything
 
+A small structure like this is enough:
+
+```yaml
+name: Prepare release
+
+on:
+	push:
+		branches: [main]
+	pull_request:
+		types: [opened, reopened, synchronize]
+
+concurrency:
+	group: ${{ github.workflow }}-${{ github.ref }}
+	cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+	release:
+		uses: hoverkraft-tech/ci-github-publish/.github/workflows/prepare-release.yml@<ref>
+		permissions:
+			contents: read
+			pull-requests: write
+```
+
 This workflow exists to keep release intent ready before promotion time.
 It should not write to the GitOps repository.
 
@@ -56,7 +100,6 @@ If this file starts looking like a deploy workflow, it has grown beyond its job.
 Read:
 
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 
 ## Step 3. Add the deploy contract
 
@@ -77,6 +120,71 @@ This is the core CD workflow. It should:
 5. reuse already-built runtime images
 6. update GitOps state instead of rebuilding during deploy
 7. map the three runtime images into the umbrella chart values
+
+A structure close to this works well:
+
+```yaml
+name: Deploy
+
+on:
+	issue_comment:
+		types: [created]
+	workflow_call:
+		inputs:
+			tag:
+				required: true
+				type: string
+			environment:
+				required: true
+				type: string
+		secrets:
+			CI_BOT_APP_PRIVATE_KEY:
+				required: true
+
+permissions: {}
+
+jobs:
+	deploy:
+		uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-chart.yml@<ref>
+		permissions:
+			actions: read
+			contents: write
+			deployments: write
+			id-token: write
+			issues: write
+			packages: write
+			pull-requests: write
+		secrets:
+			oci-registry-password: ${{ secrets.GITHUB_TOKEN }}
+			github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+		with:
+			url: ${{ (inputs.environment == 'uat' && vars.UAT_URL) || (inputs.environment == 'production' && vars.PRODUCTION_URL) || vars.REVIEW_APPS_URL }}
+			tag: ${{ inputs.tag }}
+			environment: ${{ inputs.environment }}
+			github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+			deploy-parameters: |
+				{ "repository": "${{ github.repository_owner}}/argocd-app-of-apps" }
+			images: |
+				[
+					{ "name": "backend", "context": ".", "dockerfile": "./docker/backend/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] },
+					{ "name": "frontend", "context": ".", "dockerfile": "./docker/frontend/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] },
+					{ "name": "live-data-generator", "context": ".", "dockerfile": "./docker/live-data-generator/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] }
+				]
+			chart-values: |
+				[
+					{ "path": ".backend.image", "image": "backend" },
+					{ "path": ".frontend.image", "image": "frontend" },
+					{ "path": ".live-data-generator.api.image", "image": "live-data-generator" },
+					{ "path": ".live-data-generator.ui.image", "image": "live-data-generator" }
+				]
+```
+
+What to pay attention to in that snippet:
+
+1. the deploy URL changes with the target environment
+2. `deploy-parameters.repository` points to `argocd-app-of-apps`
+3. the `images` block lists the three runtime images
+4. the `chart-values` block maps those images into the umbrella chart values
 
 Be strict about responsibility boundaries:
 
@@ -99,8 +207,6 @@ The first environment to prove is the review app flow:
 Read:
 
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
 
 ## Step 4. Validate the review app flow
 
@@ -118,6 +224,13 @@ If the workflow rebuilds images, or if you only see changes in the application r
 
 Inspect the GitOps repository diff after that first review deployment.
 Inspect the GitOps repository diff, not the application repository diff.
+
+This quick check can help from a terminal opened in the GitOps repository:
+
+```bash
+git pull
+git diff HEAD~1..HEAD
+```
 
 You should see changes only in the review app slice:
 
@@ -155,6 +268,56 @@ Rules:
 4. call `deploy.yml` with that tag
 5. promote the same artifact to every environment
 
+A small structure like this is enough:
+
+```yaml
+name: Release
+
+on:
+	workflow_dispatch:
+		inputs:
+			environment:
+				description: Environment to deploy to
+				required: true
+				type: choice
+				options:
+					- uat
+					- production
+
+permissions: {}
+
+jobs:
+	release:
+		runs-on: ubuntu-latest
+		permissions:
+			contents: write
+			pull-requests: read
+		outputs:
+			tag: ${{ steps.create-release.outputs.tag }}
+		steps:
+			- id: create-release
+				uses: hoverkraft-tech/ci-github-publish/actions/release/create@<ref>
+				with:
+					prerelease: ${{ inputs.environment == 'uat' }}
+
+	deploy:
+		needs: [release]
+		uses: ./.github/workflows/deploy.yml
+		permissions:
+			actions: read
+			contents: write
+			deployments: write
+			id-token: write
+			issues: write
+			packages: write
+			pull-requests: write
+		with:
+			tag: ${{ needs.release.outputs.tag }}
+			environment: ${{ inputs.environment }}
+		secrets:
+			CI_BOT_APP_PRIVATE_KEY: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+```
+
 Keep this workflow thin. Its job is promotion orchestration, not deployment logic duplication.
 
 If `release.yml` starts to look like a second `deploy.yml`, you are probably duplicating logic that should stay reusable in the deploy workflow.
@@ -165,8 +328,6 @@ Important detail: the published Hoverkraft CD guide is the source of truth. If y
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 - <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
 
 ## Step 6. Validate UAT, then production
@@ -192,6 +353,13 @@ For the GitOps repository content, verify this environment split:
 3. both environments point to the release tag created by `release.yml`
 4. both environments keep the same backend, frontend, and live-data-generator artifact references for that promoted tag
 
+The same diff check is useful here after each promotion:
+
+```bash
+git pull
+git diff HEAD~1..HEAD
+```
+
 When this step is done, open a terminal in the application repository root and commit then push your CD workflow changes:
 
 ```bash
@@ -202,7 +370,6 @@ git push
 
 Read:
 
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
 - <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
 
 ## Step 7. Know what the target snapshot includes

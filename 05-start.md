@@ -1,4 +1,4 @@
-# Step 01 - Start From The Baseline
+# Step 05 - Start From The Baseline
 
 Goal: create the learner repository from the production-grade starting point and prove it works locally before adding GitHub automation.
 
