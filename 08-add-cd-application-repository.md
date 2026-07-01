@@ -12,11 +12,14 @@ Start this step only after the CI workflows from [steps/06-add-ci](steps/06-add-
 In this step, you work in the application repository, not in `argocd-app-of-apps`.
 
 Before writing CD workflows, configure the repository settings they depend on.
-For this workshop, these are organization-level GitHub Actions variables and secrets.
-The application repository is expected to inherit them from the workshop organization.
+For this workshop, most of these are organization-level GitHub Actions variables and secrets.
+The application repository is expected to inherit those shared settings from the workshop organization.
 
-Do not recreate them at repository level unless the workshop organizers explicitly tell you to do so.
-The useful check here is to confirm that they already exist at organization level. Otherwise, your first workflow runs may fail for missing configuration instead of revealing real CD issues.
+One setting is repository-specific: `REVIEW_APPS_URL`.
+Create that variable in the application repository because the review app base URL is tied to that repository, not to the organization as a whole.
+
+Do not recreate the shared settings at repository level unless the workshop organizers explicitly tell you to do so.
+The useful check here is to confirm that the shared settings already exist at organization level. Otherwise, your first workflow runs may fail for missing configuration instead of revealing real CD issues.
 
 In GitHub, the shortest path is usually:
 
@@ -25,26 +28,34 @@ In GitHub, the shortest path is usually:
 3. open `Secrets and variables`
 4. open `Actions`
 
+Then open the application repository and create `REVIEW_APPS_URL` in:
+
+1. `Settings`
+2. `Secrets and variables`
+3. `Actions`
+
 Required variables and secrets for this workshop:
 
-1. variable `OCI_REGISTRY`
-2. variable `CI_BOT_APP_CLIENT_ID`
-3. secret `CI_BOT_APP_PRIVATE_KEY`
-4. variable `REVIEW_APPS_URL`
-5. variable `UAT_URL`
-6. variable `PRODUCTION_URL`
+1. organization variable `OCI_REGISTRY`
+2. organization variable `CI_BOT_APP_CLIENT_ID`
+3. organization secret `CI_BOT_APP_PRIVATE_KEY`
+4. repository variable `UAT_URL`
+5. repository variable `PRODUCTION_URL`
+6. repository variable `REVIEW_APPS_URL`
 
 Copy list:
 
 ```text
-Variables:
+Organization variables:
 OCI_REGISTRY
 CI_BOT_APP_CLIENT_ID
+
+Repository variables:
 REVIEW_APPS_URL
 UAT_URL
 PRODUCTION_URL
 
-Secrets:
+Organization secrets:
 CI_BOT_APP_PRIVATE_KEY
 ```
 
