@@ -43,6 +43,8 @@ In this workshop target, `__shared-ci.yml` is easiest to understand as four jobs
 3. `build`: builds the deployable runtime images only after all CI checks pass
 4. `tests-charts`: validates the Helm chart with the runtime images produced earlier
 
+To keep the workshop CI simpler and faster, do not add a dedicated top-level linter job. Linting stays inside the shared `continuous-integration` flow instead of becoming a separate stage in the workflow graph.
+
 What each job needs to configure:
 
 A minimal workflow header first:
@@ -286,7 +288,7 @@ Expected pull request behavior:
 1. `pull-request-ci.yml` acts only as a thin entrypoint and delegates the real work to `__shared-ci.yml`
 2. `build-ci` runs first and prepares the CI images used by the checks
 3. `continuous-integration` runs next as a matrix with exactly three entries: `backend`, `frontend`, and `live-data-generator`
-4. the lint, typecheck, and test checks happen inside that CI matrix, inside the matching CI image for each application
+4. the lint, typecheck, and test checks happen inside that CI matrix, inside the matching CI image for each application; there is no separate linter job in this workshop
 5. `build` runs only after every matrix check passes and prepares the deployable runtime images
 6. `tests-charts` runs last and validates the Helm chart with those already-built runtime images
 
