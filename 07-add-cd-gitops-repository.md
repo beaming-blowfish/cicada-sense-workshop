@@ -201,11 +201,11 @@ spec:
                   api:
                      ingress:
                         hosts:
-                           - host: cicada-sense-generator-uat.<user-xx>.cigales.cloud
+                           - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
                   ui:
                      ingress:
                         hosts:
-                           - host: cicada-sense-generator-uat.<user-xx>.cigales.cloud
+                           - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
 ```
 
 ```yaml
@@ -231,11 +231,11 @@ spec:
                   api:
                      ingress:
                         hosts:
-                           - host: cicada-sense-generator.<user-xx>.cigales.cloud
+                           - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
                   ui:
                      ingress:
                         hosts:
-                           - host: cicada-sense-generator.<user-xx>.cigales.cloud
+                           - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
 ```
 
 At minimum, review these files and fields:
