@@ -303,10 +303,6 @@ git log --oneline -n 2
 
 If you cannot clearly point to those two commits, you likely skipped a checkpoint and should clean that up before moving on.
 
-Read:
-
-- <https://github.com/hoverkraft-tech/argocd-app-of-apps-template>
-
 Dedicated snapshot:
 
 - [steps/07-add-cd-gitops-repository](steps/07-add-cd-gitops-repository)

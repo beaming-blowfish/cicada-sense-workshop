@@ -6,6 +6,11 @@ Goal: starting from the CI state and a ready GitOps repository, implement releas
 
 At the end of this step, your repository should be able to deploy a review app from a pull request, then prepare a release, create a promotion tag, and deploy the same tagged artifacts to UAT and production through your own GitOps delivery repository.
 
+External references if you need the original contracts:
+
+- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
+- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
+
 ## Step 1. Prepare the GitHub repository settings
 
 Start this step only after the CI workflows from [steps/06-add-ci](steps/06-add-ci) are green and your separate `argocd-app-of-apps` repository is ready.
@@ -59,10 +64,6 @@ Organization secrets:
 CI_BOT_APP_PRIVATE_KEY
 ```
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-
 ## Step 2. Add release preparation
 
 Create `.github/workflows/prepare-release.yml`.
@@ -109,10 +110,6 @@ This workflow exists to keep release intent ready before promotion time.
 It should not write to the GitOps repository.
 
 If this file starts looking like a deploy workflow, it has grown beyond its job.
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
 
 ## Step 3. Add the deploy contract
 
@@ -223,10 +220,6 @@ The first environment to prove is the review app flow:
 5. confirm the deployment resolves against `REVIEW_APPS_URL`
 6. confirm the deployment updates your `argocd-app-of-apps` repository rather than rebuilding anything
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-
 ## Step 4. Validate the review app flow
 
 Before promoting anything to UAT or production, validate the preview flow on a pull request.
@@ -268,10 +261,6 @@ What to verify in those changed files:
 4. the backend, frontend, and live-data-generator image values point to the pull-request artifacts that CI already built
 
 This is the cheapest way to validate the deployment contract before you involve release tags.
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
 
 ## Step 5. Add the promotion workflow
 
@@ -349,10 +338,6 @@ For this workshop target, UAT is a prerelease and production is not.
 
 Important detail: the published Hoverkraft CD guide is the source of truth. If you compare your result with [steps/08-add-cd-application-repository](steps/08-add-cd-application-repository), you will notice that the CI prerequisite in `release.yml` is still commented out in the snapshot. Treat that as temporary drift in the example step, not as the contract to copy.
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
-
 ## Step 6. Validate UAT, then production
 
 Test promotion in this order:
@@ -397,10 +382,6 @@ git commit -m "feat: add CD workflows"
 git push
 ```
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
-
 ## Step 7. Know what the target snapshot includes
 
 [steps/08-add-cd-application-repository](steps/08-add-cd-application-repository) adds only three workflows on top of [steps/06-add-ci](steps/06-add-ci):
@@ -410,10 +391,6 @@ Read:
 3. `deploy.yml`
 
 It does not add a dedicated preview cleanup workflow. If you read about `clean-deploy.yml` in the generic docs, treat that as an extra capability, not part of this workshop target.
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
 
 ## Exit criteria
 

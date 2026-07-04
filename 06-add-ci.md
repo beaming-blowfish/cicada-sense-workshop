@@ -9,7 +9,7 @@ The core result is three workflow files: one reusable workflow and two thin entr
 
 ## Step 1. Read the contract before writing YAML
 
-Read these pages first:
+External reference if you need the original contract:
 
 - <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 
@@ -226,10 +226,6 @@ If you want the exact pinned workflow and action versions, copy them from [steps
 
 The important part is the contract and the sequence, not decorative YAML.
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
-
 ## Step 3. Add the pull request entrypoint
 
 Create `.github/workflows/pull-request-ci.yml`.
@@ -251,10 +247,6 @@ Rules:
 
 If this file starts growing many build or test jobs, it is no longer thin enough. Move that logic back into `__shared-ci.yml`.
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
-
 ## Step 4. Add the mainline entrypoint
 
 Create `.github/workflows/main-ci.yml`.
@@ -275,10 +267,6 @@ Rules:
 6. keep permissions explicit and scoped
 
 This file should read like an entrypoint plus a small amount of `main`-specific behavior. It should not become a second copy of the shared workflow.
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Step 5. Validate CI behavior
 
@@ -317,10 +305,6 @@ git commit -m "feat: add CI workflows"
 git push
 ```
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
-
 ## Step 6. Reach parity with the snapshot
 
 If you want to get close to [steps/06-add-ci](steps/06-add-ci), add the repo-hygiene workflows present in the snapshot:
@@ -335,10 +319,6 @@ These are useful, but they are not the core CI objective. The real learning targ
 1. `__shared-ci.yml`
 2. `pull-request-ci.yml`
 3. `main-ci.yml`
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
 
 ## Exit criteria
 

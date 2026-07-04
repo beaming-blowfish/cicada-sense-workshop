@@ -8,16 +8,6 @@ The step folders in this repository are snapshots, not the exercise.
 Do the work in your own application repository and use this repository only as a guide or checkpoint.
 In this step, do not create `.github/workflows/` files yet.
 
-Reference docs:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/ci>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/cd>
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/cicd-release-management/>
-
 ## Outcome
 
 At the end of this step, you should have your own GitHub repository based on [steps/05-start](steps/05-start), running locally, with no GitHub Actions CI/CD workflow yet.
@@ -49,11 +39,6 @@ git push -u origin main
 
 At the end of this step, opening your repository root should show the same baseline layout as [steps/05-start](steps/05-start).
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/>
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/github-actions/>
-
 ## Step 2. Validate the local baseline
 
 Run the baseline exactly as provided.
@@ -83,10 +68,6 @@ Use this troubleshooting order:
 If the local baseline is not green, do not start writing GitHub workflows yet.
 Fix the local setup problem first, then rerun the same commands.
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/best-practices/ci-cd/>
-
 ## Step 3. Understand what is already solved
 
 Before touching GitHub Actions, be clear about the scope.
@@ -107,10 +88,6 @@ What is intentionally missing:
 
 That means your job in `05-start` is only to prove the baseline works as delivered. You are not designing automation yet.
 
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/>
-
 ## Step 4. Confirm the repository shape
 
 This workshop targets a multi-application CI/CD shape.
@@ -124,10 +101,6 @@ You have:
 4. one umbrella chart that releases the services together
 
 This matters because you should follow the multi-app guide, not the single-app one.
-
-Read:
-
-- <https://docs.hoverkraft.cloud/docs/methodology/golden-paths/application/ci-cd/github/multi-app>
 
 ## Exit criteria
 
