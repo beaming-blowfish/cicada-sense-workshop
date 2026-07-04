@@ -52,7 +52,7 @@ Learners should:
 
 Start with the step guide that matches your current stage:
 
-1. Step 05: [05-start.md](05-start.md) - prepare the baseline repository and understand the repository shape
+1. Step 05: [05-start.md](05-start.md) - clone the prepared baseline and understand the repository shape
 2. Step 06: [06-add-ci.md](06-add-ci.md) - implement CI in GitHub Actions
 3. Step 07: [07-add-cd-gitops-repository.md](07-add-cd-gitops-repository.md) - prepare the GitOps delivery repository and scaffold `cicada-sense`
 4. Step 08: [08-add-cd-application-repository.md](08-add-cd-application-repository.md) - implement release and deployment workflows

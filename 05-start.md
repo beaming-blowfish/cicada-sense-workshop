@@ -1,41 +1,38 @@
 # Step 05 - Start From The Baseline
 
-Goal: create the learner repository from the production-grade starting point and prove it works locally before adding GitHub automation.
+Goal: clone the prepared learner repository and prove the baseline works locally before adding GitHub automation.
 
 ## Before you begin
 
 The step folders in this repository are snapshots, not the exercise.
 Do the work in your own application repository and use this repository only as a guide or checkpoint.
+For this workshop run, the learner repository baseline is already prepared to save time.
 In this step, do not create `.github/workflows/` files yet.
 
 ## Outcome
 
-At the end of this step, you should have your own GitHub repository based on [steps/05-start](steps/05-start), running locally, with no GitHub Actions CI/CD workflow yet.
+At the end of this step, you should have the learner GitHub repository cloned locally, still matching [steps/05-start](steps/05-start), with no GitHub Actions CI/CD workflow yet.
 
-## Step 1. Create the learner repository
+## Step 1. Clone the learner repository
 
-1. Create a new GitHub repository with these settings: name `cicada-sense`, visibility `Public`, and no initial content.
-2. Open a terminal in `/home/coder/work` and clone that empty repository locally:
+The repository is already created and populated for this session.
+
+1. Clone the repository locally:
 
 ```bash
 git clone git@github.com:<your-org>/cicada-sense.git
 cd cicada-sense
 ```
 
-3. From that same terminal, copy the baseline into the repository root:
+2. Confirm the cloned repository still has the expected root layout:
 
-```bash
-rsync -va ../_cicada-sense-workshop/steps/05-start/ ./
-```
+	1. `compose.yaml`
+	2. `Makefile`
+	3. `application/`
+	4. `charts/`
+	5. `docker/`
 
-4. Keep the repository structure as-is. At the root, you should still have `compose.yaml`, `Makefile`, `application/`, `charts/`, and `docker/`.
-5. From the same terminal, commit the baseline and push it to GitHub:
-
-```bash
-git add .
-git commit -m "chore: initialize repository from workshop baseline"
-git push -u origin main
-```
+If the repository no longer matches [steps/05-start](steps/05-start), realign it before continuing.
 
 At the end of this step, opening your repository root should show the same baseline layout as [steps/05-start](steps/05-start).
 
