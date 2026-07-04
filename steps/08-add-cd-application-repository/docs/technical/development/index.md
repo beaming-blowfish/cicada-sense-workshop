@@ -17,6 +17,13 @@
 - Application package managers are scoped inside application containers.
 - Chart validation runs through the root `make helm` target.
 
+## Dev Container
+
+- `.devcontainer/` provides a Debian-based local development container backed by dev container features instead of a repository Dockerfile.
+- `mise.toml` is the source of truth for the repository-scoped Helm and chart-validation tooling required by root Make targets, including `helm`, `helm-docs`, `ct`, `yamale`, and `yamllint`.
+- Docker access is routed through the host Docker socket so `make setup`, `make lint`, `make test`, `make helm`, and `make ci` can run unchanged inside the dev container.
+- Root `make` targets resolve the host workspace path automatically before invoking Docker Compose, so bind-mounted app sources work both from the dev container and from a local shell.
+
 ## Generator Console
 
 The live data generator (`application/live-data-generator`) provides a deterministic fixture system:

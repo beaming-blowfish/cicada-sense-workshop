@@ -90,7 +90,6 @@ jobs:
             image: live-data-generator-ci
             path: ./application/live-data-generator
     with:
-      dependency-review: false
       working-directory: /usr/src/app
       container: |
         {
@@ -102,6 +101,7 @@ jobs:
             "/usr/src/app": "${{ matrix.path }}"
           }
         }
+      dependency-review: false
     secrets:
       container-password: ${{ secrets.GITHUB_TOKEN }}
 
