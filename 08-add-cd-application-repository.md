@@ -16,15 +16,12 @@ External references if you need the original contracts:
 Start this step only after the CI workflows from [steps/06-add-ci](steps/06-add-ci) are green and your separate `argocd-app-of-apps` repository is ready.
 In this step, you work in the application repository, not in `argocd-app-of-apps`.
 
-Before writing CD workflows, configure the repository settings they depend on.
-For this workshop, most of these are organization-level GitHub Actions variables and secrets.
-The application repository is expected to inherit those shared settings from the workshop organization.
+Before writing CD workflows, verify the repository settings they depend on.
+For this workshop, the required GitHub Actions variables and secrets are already set for you.
+Your job here is only to check that they are present and point to the expected values.
 
-One setting is repository-specific: `REVIEW_APPS_URL`.
-Create that variable in the application repository because the review app base URL is tied to that repository, not to the organization as a whole.
-
-Do not recreate the shared settings at repository level unless the workshop organizers explicitly tell you to do so.
-The useful check here is to confirm that the shared settings already exist at organization level. Otherwise, your first workflow runs may fail for missing configuration instead of revealing real CD issues.
+Do not recreate the shared settings unless the workshop organizers explicitly tell you to do so.
+The useful check here is to confirm that the shared settings already exist in the expected scope. Otherwise, your first workflow runs may fail for missing or incorrect configuration instead of revealing real CD issues.
 
 In GitHub, the shortest path is usually:
 
@@ -33,13 +30,13 @@ In GitHub, the shortest path is usually:
 3. open `Secrets and variables`
 4. open `Actions`
 
-Then open the application repository and create `REVIEW_APPS_URL` in:
+Then open the application repository and check the repository-level variables in:
 
 1. `Settings`
 2. `Secrets and variables`
 3. `Actions`
 
-Required variables and secrets for this workshop:
+Expected variables and secrets for this workshop:
 
 1. organization variable `OCI_REGISTRY`
 2. organization variable `CI_BOT_APP_CLIENT_ID`
@@ -48,7 +45,7 @@ Required variables and secrets for this workshop:
 5. repository variable `PRODUCTION_URL`
 6. repository variable `REVIEW_APPS_URL`
 
-Copy list:
+Checklist:
 
 ```text
 Organization variables:
