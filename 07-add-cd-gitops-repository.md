@@ -89,11 +89,35 @@ The workshop Argo CD instance does not send deployment notifications back to Git
 Keep the existing `deploy`, `finish-deploy`, and `clean-deploy` jobs, and add an `auto-finish-deploy` job between `deploy` and `finish-deploy`.
 That job should wait briefly, generate a GitHub App token, and dispatch a `finish-deploy` event with the deployment metadata from `deploy`.
 
-The core addition looks like this:
+A workshop-aligned version of the full file looks like this:
 
 File: `.github/workflows/deploy.yml`
 
 ```yaml
+name: "Deploy ArgoCD App of Apps"
+
+on:
+  repository_dispatch:
+    types: [deploy, finish-deploy, clean-deploy]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.event.action == 'deploy' }}
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+    secrets:
+      github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+
   auto-finish-deploy:
     if: ${{ github.event.action == 'deploy' }}
     needs: deploy
@@ -108,7 +132,7 @@ File: `.github/workflows/deploy.yml`
         id: generate-token
         with:
           client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
-          private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # reusable workflow token override is intentional
+          private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env] reusable workflow token override is intentional
 
       - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
@@ -122,6 +146,31 @@ File: `.github/workflows/deploy.yml`
               "status": "Synced",
               "description": "deployment successful"
             }
+
+  finish-deploy:
+    if: ${{ github.event.action == 'finish-deploy' }}
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/finish-deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      issues: write
+      pull-requests: write
+    with:
+      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+    secrets:
+      github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+
+  clean-deploy:
+    if: ${{ github.event.action == 'clean-deploy' }}
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/clean-deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+    secrets:
+      github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
 ```
 
 If you want an exact file-level reference, compare your result with [steps/07-add-cd-gitops-repository/.github/workflows/deploy.yml](steps/07-add-cd-gitops-repository/.github/workflows/deploy.yml) after the patch.
@@ -164,102 +213,285 @@ This command creates the default review, UAT, and production directories for the
 
 After scaffolding, adjust the generated files deliberately. The easiest approach is to compare them with the matching files under [steps/07-add-cd-gitops-repository](steps/07-add-cd-gitops-repository) and align the same fields.
 
-A target state close to this is expected for the application files:
+A workshop-aligned target state for these generated files looks like this:
 
 File: `dev/apps/review-apps/cicada-sense/template.yml.tpl`
 
 ```yaml
-# review app template
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cicada-sense-review # Will be updated by deploy workflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/application-repository: cicada-sense
+    argocd.argoproj.io/environment: "review"
+  labels:
+    layer: applications
+    service: cicada-sense
+    component: main
+    environment: dev
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
+  project: default
   destination:
     namespace: cicada-sense-review # Will be updated by deploy workflow
     server: https://dev.example.com
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    automated:
+      prune: true
+      selfHeal: true
   sources:
     - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      targetRevision: "" # Will be updated by deploy workflow
       chart: cicada-sense
       helm:
         values: |
           backend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+                  paths:
+                    - path: /api
+                      pathType: Prefix
+                    - path: /socket.io
+                      pathType: Prefix
           frontend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+                  paths:
+                    - path: /
+                      pathType: ImplementationSpecific
           live-data-generator:
             api:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
                   - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+                    paths:
+                      - path: /api
+                        pathType: Prefix
             ui:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
                   - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+                    paths:
+                      - path: /
+                        pathType: Prefix
+```
+
+File: `dev/manifests/review-apps/cicada-sense/template.yml.tpl`
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cicada-sense-review # Will be updated by deploy workflow
+  annotations:
+    app.kubernetes.io/instance: cicada-sense-review # Will be updated by deploy workflow
+    argocd.argoproj.io/sync-options: Prune=true
+    argocd.argoproj.io/sync-wave: "0"
 ```
 
 File: `prod/apps/uat/cicada-sense/cicada-sense.yml`
 
 ```yaml
-# uat application
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cicada-sense-uat
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/application-repository: cicada-sense
+    argocd.argoproj.io/environment: "uat"
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    layer: applications
+    service: cicada-sense
+    component: main
+    environment: uat
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
+  project: default
   destination:
     namespace: cicada-sense-uat
     server: https://prod.example.com
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    automated:
+      prune: true
+      selfHeal: true
   sources:
     - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      targetRevision: "" # Will be updated by deploy workflow
       chart: cicada-sense
       helm:
         values: |
           backend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
+                  paths:
+                    - path: /api
+                      pathType: Prefix
+                    - path: /socket.io
+                      pathType: Prefix
           frontend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
+                  paths:
+                    - path: /
+                      pathType: ImplementationSpecific
           live-data-generator:
             api:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
                   - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
+                    paths:
+                      - path: /api
+                        pathType: Prefix
             ui:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
                   - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
+                    paths:
+                      - path: /
+                        pathType: Prefix
+```
+
+File: `prod/manifests/uat/cicada-sense/cicada-sense.yml`
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cicada-sense-uat
+  annotations:
+    app.kubernetes.io/instance: cicada-sense-uat
+    argocd.argoproj.io/sync-options: Prune=true
+    argocd.argoproj.io/sync-wave: "0"
 ```
 
 File: `prod/apps/production/cicada-sense/cicada-sense.yml`
 
 ```yaml
-# production application
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cicada-sense-production
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/application-repository: cicada-sense
+    argocd.argoproj.io/environment: "production"
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    layer: applications
+    service: cicada-sense
+    component: main
+    environment: prod
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
+  project: default
   destination:
     namespace: cicada-sense-production
     server: https://prod.example.com
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    automated:
+      prune: true
+      selfHeal: true
   sources:
     - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      targetRevision: "" # Will be updated by deploy workflow
       chart: cicada-sense
       helm:
         values: |
           backend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense.<user-xx>.hoverkraft.cloud
+                  paths:
+                    - path: /api
+                      pathType: Prefix
+                    - path: /socket.io
+                      pathType: Prefix
           frontend:
             ingress:
+              enabled: true
+              className: "traefik"
               hosts:
                 - host: cicada-sense.<user-xx>.hoverkraft.cloud
+                  paths:
+                    - path: /
+                      pathType: ImplementationSpecific
           live-data-generator:
             api:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
-                  - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
+                  - host: cicada-sense-generator-<user-xx>.hoverkraft.cloud
+                    paths:
+                      - path: /api
+                        pathType: Prefix
             ui:
               ingress:
+                enabled: true
+                className: "traefik"
                 hosts:
-                  - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
+                  - host: cicada-sense-generator-<user-xx>.hoverkraft.cloud
+                    paths:
+                      - path: /
+                        pathType: Prefix
+```
+
+File: `prod/manifests/production/cicada-sense/cicada-sense.yml`
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cicada-sense-production
+  annotations:
+    app.kubernetes.io/instance: cicada-sense-production
+    argocd.argoproj.io/sync-options: Prune=true
+    argocd.argoproj.io/sync-wave: "0"
 ```
 
 At minimum, review these files and fields:
