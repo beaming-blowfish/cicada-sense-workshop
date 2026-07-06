@@ -78,12 +78,13 @@ Its job is intentionally small:
 2. prepare release metadata
 3. do not deploy anything
 
-A small structure like this is enough:
+A structure like this matches the target snapshot:
 
 ```yaml
-name: Prepare release
+---
+name: "Prepare release"
 
-on:
+on: # yamllint disable-line rule:truthy
   push:
     branches: [main]
   pull_request:
@@ -97,7 +98,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/prepare-release.yml@<ref>
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/prepare-release.yml@ed354ada70b9f518c2bb663e18a80041c2cf5156 # 0.27.1
     permissions:
       contents: read
       pull-requests: write
@@ -128,12 +129,13 @@ This is the core CD workflow. It should:
 6. update GitOps state instead of rebuilding during deploy
 7. map the three runtime images into the umbrella chart values
 
-A structure close to this works well:
+A structure like this matches the target snapshot:
 
 ```yaml
+---
 name: Deploy
 
-on:
+on: # yamllint disable-line rule:truthy
   issue_comment:
     types: [created]
   workflow_call:
@@ -152,7 +154,8 @@ permissions: {}
 
 jobs:
   deploy:
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-chart.yml@<ref>
+    name: Deploy
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-chart.yml@ed354ada70b9f518c2bb663e18a80041c2cf5156 # 0.27.1
     permissions:
       actions: read
       contents: write
@@ -173,9 +176,27 @@ jobs:
         { "repository": "${{ github.repository_owner}}/argocd-app-of-apps" }
       images: |
         [
-          { "name": "backend", "context": ".", "dockerfile": "./docker/backend/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] },
-          { "name": "frontend", "context": ".", "dockerfile": "./docker/frontend/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] },
-          { "name": "live-data-generator", "context": ".", "dockerfile": "./docker/live-data-generator/Dockerfile", "target": "prod", "platforms": ["linux/amd64"] }
+          {
+            "name": "backend",
+            "context": ".",
+            "dockerfile": "./docker/backend/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "frontend",
+            "context": ".",
+            "dockerfile": "./docker/frontend/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          },
+          {
+            "name": "live-data-generator",
+            "context": ".",
+            "dockerfile": "./docker/live-data-generator/Dockerfile",
+            "target": "prod",
+            "platforms": ["linux/amd64"]
+          }
         ]
       chart-values: |
         [
@@ -277,16 +298,18 @@ Rules:
 4. call `deploy.yml` with that tag
 5. promote the same artifact to every environment
 
-A small structure like this is enough:
+A structure like this matches the target snapshot:
 
 ```yaml
-name: Release
+---
+name: • 🚀 Release
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
+      # checkov:skip=CKV_GHA_7: required
       environment:
-        description: Environment to deploy to
+        description: "Environment to deploy to"
         required: true
         type: choice
         options:
@@ -296,7 +319,23 @@ on:
 permissions: {}
 
 jobs:
+  ci:
+    name: Continuous Integration
+    uses: ./.github/workflows/__shared-ci.yml
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+      id-token: write
+      issues: write
+      packages: write
+      pull-requests: write
+      security-events: write
+      statuses: write
+
   release:
+    needs: [ci]
+    name: Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -305,11 +344,12 @@ jobs:
       tag: ${{ steps.create-release.outputs.tag }}
     steps:
       - id: create-release
-        uses: hoverkraft-tech/ci-github-publish/actions/release/create@<ref>
+        uses: hoverkraft-tech/ci-github-publish/actions/release/create@ed354ada70b9f518c2bb663e18a80041c2cf5156 # 0.27.1
         with:
           prerelease: ${{ inputs.environment == 'uat' }}
 
   deploy:
+    name: Deploy
     needs: [release]
     uses: ./.github/workflows/deploy.yml
     permissions:
@@ -333,7 +373,7 @@ If `release.yml` starts to look like a second `deploy.yml`, you are probably dup
 
 For this workshop target, UAT is a prerelease and production is not.
 
-Important detail: the published Hoverkraft CD guide is the source of truth. If you compare your result with [steps/08-add-cd-application-repository](steps/08-add-cd-application-repository), you will notice that the CI prerequisite in `release.yml` is still commented out in the snapshot. Treat that as temporary drift in the example step, not as the contract to copy.
+The current target snapshot keeps the CI prerequisite in `release.yml`, so keep that job in place when matching [steps/08-add-cd-application-repository](steps/08-add-cd-application-repository).
 
 ## Step 6. Validate UAT, then production
 

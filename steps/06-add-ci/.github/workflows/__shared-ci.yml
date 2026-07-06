@@ -40,27 +40,6 @@ jobs:
             "dockerfile": "./docker/live-data-generator/Dockerfile",
             "target": "ci",
             "platforms": ["linux/amd64"]
-          },
-          {
-            "name": "backend",
-            "context": ".",
-            "dockerfile": "./docker/backend/Dockerfile",
-            "target": "prod",
-            "platforms": ["linux/amd64"]
-          },
-          {
-            "name": "frontend",
-            "context": ".",
-            "dockerfile": "./docker/frontend/Dockerfile",
-            "target": "prod",
-            "platforms": ["linux/amd64"]
-          },
-          {
-            "name": "live-data-generator",
-            "context": ".",
-            "dockerfile": "./docker/live-data-generator/Dockerfile",
-            "target": "prod",
-            "platforms": ["linux/amd64"]
           }
         ]
     secrets:

@@ -1,6 +1,6 @@
 # Step 06 - Add CI
 
-Goal: starting from [steps/05-start](steps/05-start), implement GitHub Actions CI until you are close to [steps/06-add-ci](steps/06-add-ci).
+Goal: starting from [steps/05-start](steps/05-start), implement GitHub Actions CI for the three services (`backend`, `frontend`, and `live-data-generator`) until you are close to [steps/06-add-ci](steps/06-add-ci).
 
 ## Outcome
 
@@ -50,9 +50,10 @@ What each job needs to configure:
 A minimal workflow header first:
 
 ```yaml
+---
 name: Shared - Continuous Integration for common tasks
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
 
 permissions: {}
@@ -65,7 +66,7 @@ Then add the jobs one by one.
 ```yaml
 jobs:
   build-ci:
-    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@<ref>
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@f8255a6a37eb141fa331527f5aed9b9e1d598c77 # 0.38.0
     permissions:
       contents: read
       packages: write
@@ -108,7 +109,7 @@ jobs:
 ```yaml
   continuous-integration:
     name: Continuous Integration - ${{ matrix.application }}
-    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@<ref>
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@df348077afa4e79725151d50606e9dc63f86dcb6 # 0.24.4
     needs: build-ci
     permissions:
       contents: read
@@ -130,7 +131,6 @@ jobs:
             image: live-data-generator-ci
             path: ./application/live-data-generator
     with:
-      dependency-review: false
       working-directory: /usr/src/app
       container: |
         {
@@ -142,6 +142,7 @@ jobs:
             "/usr/src/app": "${{ matrix.path }}"
           }
         }
+      dependency-review: false
     secrets:
       container-password: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -153,7 +154,7 @@ Set `dependency-review: false` here for the workshop. The reusable Node.js CI wo
 ```yaml
   build:
     needs: continuous-integration
-    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@<ref>
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/docker-build-images.yml@f8255a6a37eb141fa331527f5aed9b9e1d598c77 # 0.38.0
     permissions:
       contents: read
       packages: write
@@ -197,13 +198,14 @@ Set `dependency-review: false` here for the workshop. The reusable Node.js CI wo
   tests-charts:
     name: Tests - Charts
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
     permissions:
       contents: read
       packages: read
     steps:
       - name: Test helm charts
-        uses: hoverkraft-tech/ci-github-container/actions/helm/test-chart@<ref>
+        uses: hoverkraft-tech/ci-github-container/actions/helm/test-chart@f8255a6a37eb141fa331527f5aed9b9e1d598c77 # 0.38.0
         with:
           helm-set: |
             backend.image=${{ fromJSON(needs.build.outputs.built-images).backend.images[0] }}
@@ -217,12 +219,12 @@ Set `dependency-review: false` here for the workshop. The reusable Node.js CI wo
 
 What to pay attention to in those snippets:
 
-1. `build-ci` prepares only the three `*-ci` images.
+1. `build-ci` publishes the three `*-ci` images used by the checks and, in the target snapshot, also includes the runtime image definitions.
 2. `continuous-integration` depends on `build-ci` and maps each application path to its matching CI image.
 3. `build` depends on `continuous-integration` and prepares only the three runtime images.
 4. `tests-charts` depends on `build` and reuses those built images through `helm-set`.
 
-If you want the exact pinned workflow and action versions, copy them from [steps/06-add-ci/.github/workflows/__shared-ci.yml](steps/06-add-ci/.github/workflows/__shared-ci.yml).
+These snippets already use the pinned workflow and action versions from [steps/06-add-ci/.github/workflows/__shared-ci.yml](steps/06-add-ci/.github/workflows/__shared-ci.yml).
 
 The important part is the contract and the sequence, not decorative YAML.
 
