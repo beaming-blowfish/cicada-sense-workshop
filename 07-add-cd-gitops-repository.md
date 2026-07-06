@@ -30,7 +30,7 @@ What to do:
 1. create your own repository from the template
 2. keep the repository in the same GitHub owner or organization if you want to reuse the default deploy contract
 3. name it `argocd-app-of-apps` or be ready to update the `deploy-parameters` in later CD workflows
-4. open a terminal in `/home/coder/work` and clone the new repository locally:
+4. open a terminal in the local directory where you keep your workshop repositories, then clone the new repository there:
 
 ```bash
 git clone git@github.com:<your-org>/argocd-app-of-apps.git
@@ -65,34 +65,34 @@ That job should wait briefly, generate a GitHub App token, and dispatch a `finis
 The core addition looks like this:
 
 ```yaml
-   auto-finish-deploy:
-      if: ${{ github.event.action == 'deploy' }}
-      needs: deploy
-      runs-on: ubuntu-latest
-      permissions:
-         contents: write
-      steps:
-         - name: Wait before finishing deployment
-            run: sleep 180
+  auto-finish-deploy:
+    if: ${{ github.event.action == 'deploy' }}
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Wait before finishing deployment
+        run: sleep 180
 
-         - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-            id: generate-token
-            with:
-               client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
-               private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # reusable workflow token override is intentional
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # reusable workflow token override is intentional
 
-         - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
-            with:
-               token: ${{ steps.generate-token.outputs.token }}
-               event-type: finish-deploy
-               client-payload: |
-                  {
-                     "deployment-id": "${{ needs.deploy.outputs.deployment-id }}",
-                     "application-repository": "${{ needs.deploy.outputs.repository }}",
-                     "urls": ["https://${{ needs.deploy.outputs.url }}"],
-                     "status": "Synced",
-                     "description": "deployment successful"
-                  }
+      - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          event-type: finish-deploy
+          client-payload: |
+            {
+              "deployment-id": "${{ needs.deploy.outputs.deployment-id }}",
+              "application-repository": "${{ needs.deploy.outputs.repository }}",
+              "urls": ["https://${{ needs.deploy.outputs.url }}"],
+              "status": "Synced",
+              "description": "deployment successful"
+            }
 ```
 
 If you want an exact file-level reference, compare your result with [steps/07-add-cd-gitops-repository/.github/workflows/deploy.yml](steps/07-add-cd-gitops-repository/.github/workflows/deploy.yml) after the patch.
@@ -135,107 +135,96 @@ This command creates the default review, UAT, and production directories for the
 
 After scaffolding, adjust the generated files deliberately. The easiest approach is to compare them with the matching files under [steps/07-add-cd-gitops-repository](steps/07-add-cd-gitops-repository) and align the same fields.
 
-A practical review loop from the GitOps repository root looks like this:
-
-```bash
-sed -n '1,200p' dev/apps/review-apps/cicada-sense/template.yml.tpl
-sed -n '1,120p' dev/manifests/review-apps/cicada-sense/template.yml.tpl
-sed -n '1,200p' prod/apps/uat/cicada-sense/cicada-sense.yml
-sed -n '1,120p' prod/manifests/uat/cicada-sense/cicada-sense.yml
-sed -n '1,200p' prod/apps/production/cicada-sense/cicada-sense.yml
-sed -n '1,120p' prod/manifests/production/cicada-sense/cicada-sense.yml
-```
-
 A target state close to this is expected for the application files:
 
 ```yaml
 # review app template
 spec:
-   destination:
-      namespace: cicada-sense-review # Will be updated by deploy workflow
-      server: https://dev.example.com
-   sources:
-      - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
-         chart: cicada-sense
-         helm:
-            values: |
-               backend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
-               frontend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
-               live-data-generator:
-                  api:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
-                  ui:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+  destination:
+    namespace: cicada-sense-review # Will be updated by deploy workflow
+    server: https://dev.example.com
+  sources:
+    - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      chart: cicada-sense
+      helm:
+        values: |
+          backend:
+            ingress:
+              hosts:
+                - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+          frontend:
+            ingress:
+              hosts:
+                - host: cicada-sense-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+          live-data-generator:
+            api:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
+            ui:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
 ```
 
 ```yaml
 # uat application
 spec:
-   destination:
-      namespace: cicada-sense-uat
-      server: https://prod.example.com
-   sources:
-      - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
-         chart: cicada-sense
-         helm:
-            values: |
-               backend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
-               frontend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
-               live-data-generator:
-                  api:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
-                  ui:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
+  destination:
+    namespace: cicada-sense-uat
+    server: https://prod.example.com
+  sources:
+    - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      chart: cicada-sense
+      helm:
+        values: |
+          backend:
+            ingress:
+              hosts:
+                - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
+          frontend:
+            ingress:
+              hosts:
+                - host: cicada-sense-uat.<user-xx>.hoverkraft.cloud
+          live-data-generator:
+            api:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
+            ui:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
 ```
 
 ```yaml
 # production application
 spec:
-   destination:
-      namespace: cicada-sense-production
-      server: https://prod.example.com
-   sources:
-      - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
-         chart: cicada-sense
-         helm:
-            values: |
-               backend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense.<user-xx>.hoverkraft.cloud
-               frontend:
-                  ingress:
-                     hosts:
-                        - host: cicada-sense.<user-xx>.hoverkraft.cloud
-               live-data-generator:
-                  api:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
-                  ui:
-                     ingress:
-                        hosts:
-                           - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
+  destination:
+    namespace: cicada-sense-production
+    server: https://prod.example.com
+  sources:
+    - repoURL: ghcr.io/<organization>/cicada-sense/charts/application
+      chart: cicada-sense
+      helm:
+        values: |
+          backend:
+            ingress:
+              hosts:
+                - host: cicada-sense.<user-xx>.hoverkraft.cloud
+          frontend:
+            ingress:
+              hosts:
+                - host: cicada-sense.<user-xx>.hoverkraft.cloud
+          live-data-generator:
+            api:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
+            ui:
+              ingress:
+                hosts:
+                  - host: cicada-sense-generator.<user-xx>.hoverkraft.cloud
 ```
 
 At minimum, review these files and fields:
