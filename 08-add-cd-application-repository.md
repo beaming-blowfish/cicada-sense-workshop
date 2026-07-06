@@ -80,6 +80,8 @@ Its job is intentionally small:
 
 A structure like this matches the target snapshot:
 
+File: `.github/workflows/prepare-release.yml`
+
 ```yaml
 ---
 name: "Prepare release"
@@ -130,6 +132,8 @@ This is the core CD workflow. It should:
 7. map the three runtime images into the umbrella chart values
 
 A structure like this matches the target snapshot:
+
+File: `.github/workflows/deploy.yml`
 
 ```yaml
 ---
@@ -299,6 +303,8 @@ Rules:
 5. promote the same artifact to every environment
 
 A structure like this matches the target snapshot:
+
+File: `.github/workflows/release.yml`
 
 ```yaml
 ---

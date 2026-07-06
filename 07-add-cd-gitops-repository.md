@@ -56,6 +56,33 @@ Useful options:
 
 This initialization step replaces the repository placeholders and removes the bootstrap script so the repository starts from a clean, usable GitOps state.
 
+For workshop simplicity, keep the internal shared CI workflow in this GitOps repository minimal.
+In the workshop snapshot, `.github/workflows/__shared-ci.yml` does not run linting and only keeps a no-op placeholder job so the wrapper workflows stay valid.
+Do not spend time restoring the template linter job in this step.
+
+The workshop version looks like this:
+
+File: `.github/workflows/__shared-ci.yml`
+
+```yaml
+---
+name: Internal - Common Continuous Integration tasks
+
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  workshop-ci:
+    name: Workshop CI
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Skip linting for workshop
+        run: echo "Linting is disabled in this workshop snapshot."
+```
+
 Before you commit that initialized state, patch `.github/workflows/deploy.yml` for the workshop environment.
 The workshop Argo CD instance does not send deployment notifications back to GitHub, so the GitOps repository must finish deployments by itself after the initial `deploy` job succeeds.
 
@@ -63,6 +90,8 @@ Keep the existing `deploy`, `finish-deploy`, and `clean-deploy` jobs, and add an
 That job should wait briefly, generate a GitHub App token, and dispatch a `finish-deploy` event with the deployment metadata from `deploy`.
 
 The core addition looks like this:
+
+File: `.github/workflows/deploy.yml`
 
 ```yaml
   auto-finish-deploy:
@@ -137,6 +166,8 @@ After scaffolding, adjust the generated files deliberately. The easiest approach
 
 A target state close to this is expected for the application files:
 
+File: `dev/apps/review-apps/cicada-sense/template.yml.tpl`
+
 ```yaml
 # review app template
 spec:
@@ -167,6 +198,8 @@ spec:
                   - host: cicada-sense-generator-review.<user-xx>.hoverkraft.cloud # Will be updated by deploy workflow
 ```
 
+File: `prod/apps/uat/cicada-sense/cicada-sense.yml`
+
 ```yaml
 # uat application
 spec:
@@ -196,6 +229,8 @@ spec:
                 hosts:
                   - host: cicada-sense-generator-uat.<user-xx>.hoverkraft.cloud
 ```
+
+File: `prod/apps/production/cicada-sense/cicada-sense.yml`
 
 ```yaml
 # production application
@@ -282,7 +317,8 @@ Check these points:
 3. the `cicada-sense` review, UAT, and production directories exist
 4. the generated files are ready to receive the real chart and image references from the CD workflow
 5. `.github/workflows/deploy.yml` contains the workshop `auto-finish-deploy` workaround
-6. the repository history now contains at least one commit for initialization and one for the `cicada-sense` scaffold
+6. `.github/workflows/__shared-ci.yml` stays minimal for the workshop and does not run linting
+7. the repository history now contains at least one commit for initialization and one for the `cicada-sense` scaffold
 
 This quick check can help before you move on:
 

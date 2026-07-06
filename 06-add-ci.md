@@ -49,6 +49,8 @@ What each job needs to configure:
 
 A minimal workflow header first:
 
+File: `.github/workflows/__shared-ci.yml`
+
 ```yaml
 ---
 name: Shared - Continuous Integration for common tasks
@@ -62,6 +64,8 @@ permissions: {}
 Then add the jobs one by one.
 
 `build-ci`:
+
+File: `.github/workflows/__shared-ci.yml`
 
 ```yaml
 jobs:
@@ -105,6 +109,8 @@ jobs:
 ```
 
 `continuous-integration`:
+
+File: `.github/workflows/__shared-ci.yml`
 
 ```yaml
   continuous-integration:
@@ -151,6 +157,8 @@ Set `dependency-review: false` here for the workshop. The reusable Node.js CI wo
 
 `build`:
 
+File: `.github/workflows/__shared-ci.yml`
+
 ```yaml
   build:
     needs: continuous-integration
@@ -193,6 +201,8 @@ Set `dependency-review: false` here for the workshop. The reusable Node.js CI wo
 ```
 
 `tests-charts`:
+
+File: `.github/workflows/__shared-ci.yml`
 
 ```yaml
   tests-charts:
@@ -269,6 +279,75 @@ Rules:
 6. keep permissions explicit and scoped
 
 This file should read like an entrypoint plus a small amount of `main`-specific behavior. It should not become a second copy of the shared workflow.
+
+A structure like this matches the target snapshot:
+
+File: `.github/workflows/main-ci.yml`
+
+```yaml
+---
+name: Main - Continuous Integration
+
+on: # yamllint disable-line rule:truthy
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  clean:
+    uses: hoverkraft-tech/ci-github-container/.github/workflows/prune-pull-requests-images-tags.yml@f8255a6a37eb141fa331527f5aed9b9e1d598c77 # 0.38.0
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: read
+    with:
+      images: '["backend-ci","frontend-ci","live-data-generator-ci","backend","frontend","live-data-generator"]'
+
+  ci:
+    name: Continuous Integration
+    uses: ./.github/workflows/__shared-ci.yml
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+      id-token: write
+      issues: write
+      packages: write
+      pull-requests: write
+      security-events: write
+      statuses: write
+
+  helm-docs:
+    needs: ci
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: hoverkraft-tech/ci-github-container/actions/helm/generate-docs@f8255a6a37eb141fa331527f5aed9b9e1d598c77 # 0.38.0
+        with:
+          working-directory: ./charts
+          github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+          github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env]
+```
+
+Be explicit with the `clean` job image list. In this workshop snapshot it prunes exactly these six tags:
+
+1. `backend-ci`
+2. `frontend-ci`
+3. `live-data-generator-ci`
+4. `backend`
+5. `frontend`
+6. `live-data-generator`
 
 ## Step 5. Validate CI behavior
 
