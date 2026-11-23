@@ -109,7 +109,7 @@ concurrency:
 jobs:
   deploy:
     if: ${{ github.event.action == 'deploy' }}
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/deploy-argocd-app-of-apps.yml@79515002f850e714d4c76f07983e6eb1ba97bea5 # 3.1.1
     permissions:
       contents: read
       pull-requests: write
@@ -149,7 +149,7 @@ jobs:
 
   finish-deploy:
     if: ${{ github.event.action == 'finish-deploy' }}
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/finish-deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/finish-deploy-argocd-app-of-apps.yml@79515002f850e714d4c76f07983e6eb1ba97bea5 # 3.1.1
     permissions:
       actions: read
       contents: read
@@ -163,7 +163,7 @@ jobs:
 
   clean-deploy:
     if: ${{ github.event.action == 'clean-deploy' }}
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/clean-deploy-argocd-app-of-apps.yml@607069025f6c1312680ed0864c4d9f4338b82dfe # 0.26.5
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/clean-deploy-argocd-app-of-apps.yml@79515002f850e714d4c76f07983e6eb1ba97bea5 # 3.1.1
     permissions:
       contents: read
       pull-requests: write
